@@ -1,0 +1,15 @@
+[package]
+name = "compgeo"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+eframe = { version = "0.29.1", features = [
+    "default",
+    "__screenshot", # __screenshot is so we can dump a screenshot using EFRAME_SCREENSHOT_TO
+] }
+env_logger = { version = "0.11", default-features = false, features = [
+    "auto-color",
+    "humantime",
+] }
+rand = "0.8.5"
