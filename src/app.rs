@@ -3,13 +3,14 @@ use eframe::egui;
 use crate::{algorithms, point::Point};
 
 // points
-const MAX_POINTS: usize = 1000;
+const MAX_NUM_POINTS: usize = 1000;
+const DEFAULT_NUM_POINTS: usize = 0;
 // radius
-const MAX_RADIUS: f32 = 3.0;
-const DEFAULT_RADIUS: f32 = 1.00;
+const MAX_RADIUS: f32 = 4.0;
+const DEFAULT_RADIUS: f32 = 2.00;
 // zoom
 const MAX_ZOOM: f32 = 1.0;
-const DEFAULT_ZOOM: f32 = 0.75;
+const DEFAULT_ZOOM: f32 = 0.5;
 
 #[derive(Default)]
 pub struct EguiApp {
@@ -32,6 +33,8 @@ pub struct App {
     radius: f32,
     num_points: usize,
     points: Vec<Point>,
+    vertices: Vec<egui::Pos2>,
+    rendered: bool,
 }
 
 impl Default for App {
@@ -39,8 +42,10 @@ impl Default for App {
         Self {
             zoom: DEFAULT_ZOOM,
             radius: DEFAULT_RADIUS,
-            num_points: 10,
+            num_points: DEFAULT_NUM_POINTS,
             points: vec![],
+            vertices: vec![],
+            rendered: false,
         }
     }
 }
@@ -61,44 +66,18 @@ impl App {
                 points[i] = Point::random(&mut rng);
             }
             self.points.append(&mut points);
+            self.rendered = false;
         }
 
         if self.points.len() > self.num_points {
             self.points.truncate(self.num_points);
+            self.rendered = false;
         }
 
-        // TODO: don't do this on every frame
-        let vertices =
-            algorithms::grahams_scan(&self.points.iter().map(|p| p.vec).collect::<Vec<_>>());
-
-        if !vertices.is_empty() {
-            let mut shapes = vertices
-                .as_slice()
-                .windows(2)
-                .map(|w| {
-                    let a = w[0];
-                    let b = w[1];
-
-                    draw_line(
-                        self.screen_space(&painter),
-                        [a.to_pos2(), b.to_pos2()],
-                        self.radius,
-                        egui::Color32::LIGHT_BLUE,
-                    )
-                })
-                .collect::<Vec<_>>();
-
-            shapes.push(draw_line(
-                self.screen_space(&painter),
-                [
-                    vertices.first().unwrap().to_pos2(),
-                    vertices.last().unwrap().to_pos2(),
-                ],
-                self.radius,
-                egui::Color32::LIGHT_BLUE,
-            ));
-
-            painter.extend(shapes);
+        if !self.rendered {
+            self.vertices =
+                algorithms::graham_scan(&self.points.iter().map(|p| p.pos).collect::<Vec<_>>());
+            self.rendered = true;
         }
 
         self.paint(&painter);
@@ -116,70 +95,117 @@ impl App {
     fn paint(&mut self, painter: &egui::Painter) {
         let mut shapes: Vec<egui::Shape> = Vec::new();
 
-        for Point { vec, color } in &self.points {
+        for Point { pos, color } in &self.points {
             shapes.push(egui::Shape::circle_filled(
-                self.screen_space(painter) * vec.to_pos2(),
+                self.to_screen_space(painter, *pos),
                 self.radius,
                 *color,
             ));
         }
-        // draw_x(self.radius, &mut shapes, self.screen_space(painter));
 
+        let vertices = self.vertices.as_slice().windows(2).map(|w| {
+            let a = w[0];
+            let b = w[1];
+
+            self.draw_line(painter, [a, b], 1.0, egui::Color32::LIGHT_BLUE)
+        });
+
+        if !self.vertices.is_empty() {
+            shapes.push(self.draw_line(
+                painter,
+                [
+                    *self.vertices.first().unwrap(),
+                    *self.vertices.last().unwrap(),
+                ],
+                1.0,
+                egui::Color32::LIGHT_BLUE,
+            ));
+        }
+
+        self.draw_grid(&painter, &mut shapes);
+
+        painter.extend(vertices);
         painter.extend(shapes);
     }
 
     fn options_ui(&mut self, ui: &mut egui::Ui) {
         ui.add(egui::Slider::new(&mut self.zoom, 0.0..=MAX_ZOOM).text("zoom"));
-        ui.add(egui::Slider::new(&mut self.num_points, 0..=MAX_POINTS).text("num points"));
+        ui.add(egui::Slider::new(&mut self.num_points, 0..=MAX_NUM_POINTS).text("num points"));
         ui.add(egui::Slider::new(&mut self.radius, 0.0..=MAX_RADIUS).text("point size"));
 
         egui::reset_button(ui, self, "Reset");
     }
 
-    fn screen_space(&self, painter: &egui::Painter) -> egui::emath::RectTransform {
+    /// Takes a point `p` and converts it to screen space.
+    fn to_screen_space(&self, painter: &egui::Painter, p: egui::Pos2) -> egui::Pos2 {
         let rect = painter.clip_rect();
         egui::emath::RectTransform::from_to(
             egui::Rect::from_center_size(egui::Pos2::ZERO, rect.square_proportions() / self.zoom),
             rect,
-        )
+        ) * egui::pos2(p.x, p.y * -1.0)
     }
-}
 
-fn draw_line(
-    to_screen: egui::emath::RectTransform,
-    points: [egui::Pos2; 2],
-    stroke: f32,
-    color: egui::Color32,
-) -> egui::Shape {
-    let line = [to_screen * points[0], to_screen * points[1]];
-    egui::Shape::line_segment(line, (stroke, color))
-}
+    // Debug code. Just draws an X on the middle of the screen.
+    #[allow(dead_code)]
+    fn draw_grid(&self, painter: &egui::Painter, shapes: &mut Vec<egui::Shape>) {
+        let x_axis = self.draw_line(
+            painter,
+            [egui::pos2(-1.0, 0.0), egui::pos2(1.0, 0.0)],
+            1.0,
+            egui::Color32::WHITE,
+        );
+        let y_axis = self.draw_line(
+            painter,
+            [egui::pos2(0.0, -1.0), egui::pos2(0.0, 1.0)],
+            1.0,
+            egui::Color32::WHITE,
+        );
 
-// Debug code. Just draws an X on the middle of the screen.
-#[allow(dead_code)]
-fn draw_x(stroke: f32, shapes: &mut Vec<egui::Shape>, to_screen: egui::emath::RectTransform) {
-    let center = egui::pos2(0.0, 0.0);
-    let end = center + egui::Vec2::new(0.5, 0.5);
-    let a = draw_line(to_screen, [center, end], stroke, egui::Color32::LIGHT_BLUE);
+        shapes.push(egui::Shape::circle_filled(
+            self.to_screen_space(painter, egui::pos2(0.0, 0.0)),
+            5.0,
+            egui::Color32::RED,
+        ));
 
-    let center = egui::pos2(0.0, 0.0);
-    let end = center + egui::Vec2::new(0.5, -0.5);
-    let b = draw_line(to_screen, [center, end], stroke, egui::Color32::LIGHT_GREEN);
+        shapes.push(egui::Shape::circle_filled(
+            self.to_screen_space(painter, egui::pos2(1.0, 0.0)),
+            5.0,
+            egui::Color32::ORANGE,
+        ));
 
-    let center = egui::pos2(0.0, 0.0);
-    let end = center + egui::Vec2::new(-0.5, 0.5);
-    let c = draw_line(to_screen, [center, end], stroke, egui::Color32::LIGHT_RED);
+        shapes.push(egui::Shape::circle_filled(
+            self.to_screen_space(painter, egui::pos2(0.0, 1.0)),
+            5.0,
+            egui::Color32::YELLOW,
+        ));
 
-    let center = egui::pos2(0.0, 0.0);
-    let end = center + egui::Vec2::new(-0.5, -0.5);
-    let d = draw_line(
-        to_screen,
-        [center, end],
-        stroke,
-        egui::Color32::LIGHT_YELLOW,
-    );
-    shapes.push(a);
-    shapes.push(b);
-    shapes.push(c);
-    shapes.push(d);
+        shapes.push(egui::Shape::circle_filled(
+            self.to_screen_space(painter, egui::pos2(-1.0, 0.0)),
+            5.0,
+            egui::Color32::GREEN,
+        ));
+
+        shapes.push(egui::Shape::circle_filled(
+            self.to_screen_space(painter, egui::pos2(0.0, -1.0)),
+            5.0,
+            egui::Color32::BLUE,
+        ));
+
+        shapes.push(x_axis);
+        shapes.push(y_axis);
+    }
+
+    fn draw_line(
+        &self,
+        painter: &egui::Painter,
+        points: [egui::Pos2; 2],
+        stroke: f32,
+        color: egui::Color32,
+    ) -> egui::Shape {
+        let line = [
+            self.to_screen_space(painter, points[0]),
+            self.to_screen_space(painter, points[1]),
+        ];
+        egui::Shape::line_segment(line, (stroke, color))
+    }
 }
