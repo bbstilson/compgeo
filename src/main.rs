@@ -3,6 +3,7 @@ use eframe::egui;
 pub mod algorithms;
 mod app;
 pub mod color;
+mod graham_scan;
 pub mod point;
 
 fn main() -> eframe::Result {

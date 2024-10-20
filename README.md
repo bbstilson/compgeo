@@ -10,3 +10,4 @@ cargo run --release
 - mouse drawn points
 - mouse deleted points
 - different random point generation (square / circle)
+- unnest app code

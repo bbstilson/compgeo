@@ -5,7 +5,7 @@ use crate::color;
 
 #[derive(Default, Clone, PartialEq)]
 pub struct Point {
-    pub vec: egui::Vec2,
+    pub pos: egui::Pos2,
     pub color: egui::Color32,
 }
 
@@ -16,7 +16,7 @@ impl Point {
         let y = rng.gen_range(0.0..1.0);
         Self {
             // random point, then offset by normalized screen space
-            vec: egui::vec2(x, y) - egui::vec2(0.5, 0.5),
+            pos: (egui::vec2(x, y) - egui::vec2(0.5, 0.5)).to_pos2(),
             color: color::gen_random(&mut rng),
         }
     }
