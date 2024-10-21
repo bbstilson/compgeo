@@ -1,5 +1,9 @@
 # Comp Geo Visualizer
 
+App to visualize (and implementations of ) computational geometry algorithms.
+
+![app screenshot](./img.png)
+
 ```bash
 cargo run --release
 ```
