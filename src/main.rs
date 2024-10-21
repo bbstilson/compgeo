@@ -3,8 +3,8 @@ use eframe::egui;
 pub mod algorithms;
 mod app;
 pub mod color;
+pub mod data;
 mod graham_scan;
-pub mod point;
 
 fn main() -> eframe::Result {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).

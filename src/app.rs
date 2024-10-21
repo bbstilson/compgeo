@@ -2,13 +2,12 @@ use eframe::egui;
 
 use crate::{
     algorithms,
-    graham_scan::vec2::{vec2, Vec2},
-    point::Point,
+    data::{vec2, Point, Vec2},
 };
 
 // points
 const MAX_NUM_POINTS: usize = 1000;
-const DEFAULT_NUM_POINTS: usize = 5;
+const DEFAULT_NUM_POINTS: usize = 25;
 // radius
 const MAX_RADIUS: f32 = 4.0;
 const DEFAULT_RADIUS: f32 = 2.00;
@@ -69,25 +68,6 @@ impl App {
             }
         });
 
-        // self.points = vec![
-        //     Point {
-        //         color: egui::Color32::RED,
-        //         pos: egui::pos2(-1.0, -1.0),
-        //     },
-        //     Point {
-        //         color: egui::Color32::ORANGE,
-        //         pos: egui::pos2(1.0, -1.0),
-        //     },
-        //     Point {
-        //         color: egui::Color32::YELLOW,
-        //         pos: egui::pos2(0.0, 1.0),
-        //     },
-        //     Point {
-        //         color: egui::Color32::WHITE,
-        //         pos: egui::pos2(0.0, 0.0),
-        //     },
-        // ];
-
         if self.points.len() < self.num_points {
             let num_to_generate = self.num_points - self.points.len();
             let mut rng = rand::thread_rng();
@@ -105,12 +85,8 @@ impl App {
         }
 
         if !self.rendered {
-            self.vertices = algorithms::graham_scan(
-                &self.points.iter().map(|p| ("", p.pos)).collect::<Vec<_>>(),
-            )
-            .into_iter()
-            .map(|p| p.1)
-            .collect();
+            self.vertices =
+                algorithms::graham_scan(&self.points.iter().map(|p| p.pos).collect::<Vec<_>>());
             self.rendered = true;
         }
 
@@ -156,7 +132,7 @@ impl App {
             ));
         }
 
-        self.draw_grid(&painter, &mut shapes);
+        // self.draw_grid(&painter, &mut shapes);
 
         painter.extend(vertices);
         painter.extend(shapes);
@@ -195,35 +171,35 @@ impl App {
             egui::Color32::WHITE,
         );
 
-        // shapes.push(egui::Shape::circle_filled(
-        //     self.to_screen_space(painter, vec2(0.0, 0.0)),
-        //     5.0,
-        //     egui::Color32::RED,
-        // ));
+        shapes.push(egui::Shape::circle_filled(
+            self.to_screen_space(painter, vec2(0.0, 0.0)),
+            5.0,
+            egui::Color32::RED,
+        ));
 
-        // shapes.push(egui::Shape::circle_filled(
-        //     self.to_screen_space(painter, vec2(1.0, 0.0)),
-        //     5.0,
-        //     egui::Color32::ORANGE,
-        // ));
+        shapes.push(egui::Shape::circle_filled(
+            self.to_screen_space(painter, vec2(1.0, 0.0)),
+            5.0,
+            egui::Color32::ORANGE,
+        ));
 
-        // shapes.push(egui::Shape::circle_filled(
-        //     self.to_screen_space(painter, vec2(0.0, 1.0)),
-        //     5.0,
-        //     egui::Color32::YELLOW,
-        // ));
+        shapes.push(egui::Shape::circle_filled(
+            self.to_screen_space(painter, vec2(0.0, 1.0)),
+            5.0,
+            egui::Color32::YELLOW,
+        ));
 
-        // shapes.push(egui::Shape::circle_filled(
-        //     self.to_screen_space(painter, vec2(-1.0, 0.0)),
-        //     5.0,
-        //     egui::Color32::GREEN,
-        // ));
+        shapes.push(egui::Shape::circle_filled(
+            self.to_screen_space(painter, vec2(-1.0, 0.0)),
+            5.0,
+            egui::Color32::GREEN,
+        ));
 
-        // shapes.push(egui::Shape::circle_filled(
-        //     self.to_screen_space(painter, vec2(0.0, -1.0)),
-        //     5.0,
-        //     egui::Color32::BLUE,
-        // ));
+        shapes.push(egui::Shape::circle_filled(
+            self.to_screen_space(painter, vec2(0.0, -1.0)),
+            5.0,
+            egui::Color32::BLUE,
+        ));
 
         shapes.push(x_axis);
         shapes.push(y_axis);

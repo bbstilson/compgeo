@@ -1,4 +1,4 @@
-use super::{direction::Direction, vec2::Vec2};
+use crate::data::{PolarDirection, Vec2};
 
 // Cone example:
 // [ABC] ==
@@ -7,7 +7,7 @@ use super::{direction::Direction, vec2::Vec2};
 //       /
 //      /
 //     /_____
-// origin     C
+//    B      C
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Cone {
     pub a: Vec2,
@@ -16,51 +16,32 @@ pub struct Cone {
 }
 
 impl Cone {
-    /// Returns the angle of the cone.
+    /// Returns the cosine angle of the cone.
     pub fn angle(self) -> f32 {
-        println!("{self:?}");
         let Self { a, b, origin } = self;
-        // translate to the origin
+        // Translate to the origin.
         let a = a.translate(origin);
         let b = b.translate(origin);
-        // println!("a: {a} | b: {b}");
-        // normalize to unit circle
-        // let a = a.normalize();
-        // let b = b.normalize();
-        // // println!("a: {a} | b: {b}");
-        // // cross product
-        // let angle = b.cross(a);
-        // println!("{angle} and {}", a.x < origin.x);
-        // angle
-
+        // https://en.wikipedia.org/wiki/Dot_product#Application_to_the_law_of_cosines
         a.dot(b) / (a.length() * b.length())
-
-        // 1 == origin
-        // 2 == a
-        // 3 == b
-        // (a.x - origin.x) * (b.y - origin.y) - (a.y - origin.y) * (b.x - origin.x)
     }
 
-    pub fn angle_direction(self) -> Direction {
+    pub fn angle_direction(self) -> PolarDirection {
         // For three points if the polar angle is 0.0, the points are collinear;
         // if it is positive, the three points constitute a "left turn" or
         // counter-clockwise orientation, otherwise a "right turn" or clockwise
         // orientation (for counter-clockwise numbered points).
-        println!("{self:?}");
         let Self { a, b, origin } = self;
-        // translate to the origin
+        // Translate to the origin.
         let a = a.translate(origin);
         let b = b.translate(origin);
-        println!("a: {a} | b: {b}");
         let angle = b.cross(a);
-        println!("cross: {angle}");
-        println!();
         if angle == 0.0 {
-            Direction::Collinear
+            PolarDirection::Collinear
         } else if angle <= 0.0 {
-            Direction::CW
+            PolarDirection::CW
         } else {
-            Direction::CCW
+            PolarDirection::CCW
         }
     }
 }
@@ -73,36 +54,9 @@ impl std::fmt::Display for Cone {
 
 #[cfg(test)]
 mod tests {
-    use crate::graham_scan::{cone::Cone, direction::Direction, vec2::vec2};
+    use crate::data::vec2;
 
-    #[test]
-    fn test_foo() {
-        let tests = vec![
-            (
-                vec2(-1.0, -1.0),
-                vec2(0.0, 0.0),
-                vec2(0.0, -1.0),
-                Direction::CW,
-            ),
-            (
-                vec2(1.0, 0.0),
-                vec2(0.0, 0.0),
-                vec2(-1.0, 1.0),
-                Direction::CW,
-            ),
-            // (vec2(0.0, 0.0), vec2(0.0, 0.0), vec2(0.0, 0.0)),
-            // (vec2(0.0, 0.0), vec2(0.0, 0.0), vec2(0.0, 0.0)),
-            // (vec2(0.0, 0.0), vec2(0.0, 0.0), vec2(0.0, 0.0)),
-        ];
-
-        for (a, origin, b, expected) in tests {
-            // println!("{:?}", Cone { a, b, origin }.angle_direction());
-            assert_eq!(Cone { a, b, origin }.angle_direction(), expected);
-            println!();
-            // println!("{:?}", Cone { a: b, b: a, origin }.angle_direction());
-            assert_eq!(Cone { a: b, b: a, origin }.angle_direction(), -expected);
-        }
-    }
+    use super::*;
 
     #[test]
     fn test_get_angle() {
@@ -134,7 +88,7 @@ mod tests {
         }
         .angle_direction();
 
-        assert_eq!(ans, Direction::Collinear);
+        assert_eq!(ans, PolarDirection::Collinear);
 
         let ans = Cone {
             a: vec2(0.0, 1.0),
@@ -143,7 +97,7 @@ mod tests {
         }
         .angle_direction();
 
-        assert_eq!(ans, Direction::Collinear);
+        assert_eq!(ans, PolarDirection::Collinear);
 
         //    p0
         //    /\
@@ -157,7 +111,7 @@ mod tests {
             origin: vec2(-0.9, -0.9),
         }
         .angle_direction();
-        assert_eq!(ans, Direction::CCW);
+        assert_eq!(ans, PolarDirection::CCW);
 
         //    p0
         //    /\
@@ -171,7 +125,7 @@ mod tests {
             origin: vec2(-0.9, -0.9),
         }
         .angle_direction();
-        assert_eq!(ans, Direction::CW);
+        assert_eq!(ans, PolarDirection::CW);
 
         // https://en.wikipedia.org/wiki/File:Graham_Scan.svg
         let p = vec2(0.0, -0.5);
@@ -180,16 +134,16 @@ mod tests {
         let c = vec2(0.0, 0.0);
         let d = vec2(-0.5, 0.3);
         let pab = Cone { a: p, b, origin: a }.angle_direction();
-        assert_eq!(pab, Direction::CCW);
+        assert_eq!(pab, PolarDirection::CCW);
         let abc = Cone { a, b: c, origin: b }.angle_direction();
-        assert_eq!(abc, Direction::CCW);
+        assert_eq!(abc, PolarDirection::CCW);
         let bcd = Cone {
             a: b,
             b: d,
             origin: c,
         }
         .angle_direction();
-        assert_eq!(bcd, Direction::CW);
+        assert_eq!(bcd, PolarDirection::CW);
 
         //      p2
         //      /
@@ -205,7 +159,7 @@ mod tests {
             ..Default::default()
         }
         .angle_direction();
-        assert_eq!(ans, Direction::CW);
+        assert_eq!(ans, PolarDirection::CW);
 
         //   p1
         //   |\
@@ -218,7 +172,7 @@ mod tests {
             ..Default::default()
         }
         .angle_direction();
-        assert_eq!(ans, Direction::CW);
+        assert_eq!(ans, PolarDirection::CW);
 
         // p0 ____ p1
         //       /
@@ -232,7 +186,7 @@ mod tests {
             ..Default::default()
         }
         .angle_direction();
-        assert_eq!(ans, Direction::CW);
+        assert_eq!(ans, PolarDirection::CW);
 
         // p2 |
         //    |
@@ -247,6 +201,6 @@ mod tests {
             ..Default::default()
         }
         .angle_direction();
-        assert_eq!(ans, Direction::Collinear);
+        assert_eq!(ans, PolarDirection::Collinear);
     }
 }

@@ -1,13 +1,13 @@
 use std::ops::Neg;
 
 #[derive(Debug, PartialEq)]
-pub enum Direction {
+pub enum PolarDirection {
     CW,  // clockwise
     CCW, // counter clockwise
     Collinear,
 }
 
-impl Neg for Direction {
+impl Neg for PolarDirection {
     type Output = Self;
 
     fn neg(self) -> Self::Output {

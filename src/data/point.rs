@@ -3,7 +3,7 @@ use rand::Rng;
 
 use crate::{
     color,
-    graham_scan::vec2::{vec2, Vec2},
+    data::{vec2, Vec2},
 };
 
 #[derive(Default, Clone, PartialEq)]

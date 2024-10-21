@@ -1,41 +1,35 @@
-use crate::graham_scan::{direction::Direction, vec2::Vec2};
+use crate::data::{Cone, PolarDirection, Vec2};
 
-use super::cone::Cone;
-
-type Point<'a> = (&'a str, Vec2);
-
-pub fn to_the_right<'a>(stack: &[Point<'a>], p2: Point<'a>) -> bool {
+pub fn to_the_right(stack: &[Vec2], p2: Vec2) -> bool {
     let p0 = next_to_top(&stack);
     let p1 = top(&stack);
     let cone = Cone {
-        a: p0.1,
-        b: p2.1,
-        origin: p1.1,
+        a: p0,
+        b: p2,
+        origin: p1,
     };
-    let ans = cone.angle_direction();
-    println!("{ans:?}");
-    match ans {
-        Direction::Collinear | Direction::CW => true,
-        Direction::CCW => false,
+    match cone.angle_direction() {
+        PolarDirection::Collinear | PolarDirection::CW => true,
+        PolarDirection::CCW => false,
     }
 }
 
-fn next_to_top<'a, T: Clone>(stack: &'a [(&str, T)]) -> (&'a str, T) {
+fn next_to_top<T: Copy>(stack: &[T]) -> T {
     assert!(stack.len() > 1);
-    stack[stack.len() - 2].clone()
+    stack[stack.len() - 2]
 }
 
 #[test]
 fn test_next_to_top() {
-    assert_eq!(next_to_top(&vec![("A", 1), ("B", 2), ("C", 3)]), ("B", 2));
+    assert_eq!(next_to_top(&vec![1, 2, 3]), 2);
 }
 
-fn top<'a, T: Clone>(stack: &'a [(&'a str, T)]) -> (&'a str, T) {
+fn top<T: Copy>(stack: &[T]) -> T {
     assert!(stack.len() > 1);
-    stack[stack.len() - 1].clone()
+    stack[stack.len() - 1]
 }
 
 #[test]
 fn test_top() {
-    assert_eq!(top(&vec![("A", 1), ("B", 2), ("C", 3)]), ("C", 3));
+    assert_eq!(top(&vec![1, 2, 3]), 3);
 }
