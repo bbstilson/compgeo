@@ -1,6 +1,10 @@
 use eframe::egui;
 
-use crate::{algorithms, point::Point};
+use crate::{
+    algorithms,
+    graham_scan::vec2::{vec2, Vec2},
+    point::Point,
+};
 
 // points
 const MAX_NUM_POINTS: usize = 1000;
@@ -33,7 +37,7 @@ pub struct App {
     radius: f32,
     num_points: usize,
     points: Vec<Point>,
-    vertices: Vec<egui::Pos2>,
+    vertices: Vec<Vec2>,
     rendered: bool,
 }
 
@@ -102,11 +106,7 @@ impl App {
 
         if !self.rendered {
             self.vertices = algorithms::graham_scan(
-                &self
-                    .points
-                    .iter()
-                    .map(|p| ("".to_string(), p.pos))
-                    .collect::<Vec<_>>(),
+                &self.points.iter().map(|p| ("", p.pos)).collect::<Vec<_>>(),
             )
             .into_iter()
             .map(|p| p.1)
@@ -171,7 +171,7 @@ impl App {
     }
 
     /// Takes a point `p` and converts it to screen space.
-    fn to_screen_space(&self, painter: &egui::Painter, p: egui::Pos2) -> egui::Pos2 {
+    fn to_screen_space(&self, painter: &egui::Painter, p: Vec2) -> egui::Pos2 {
         let rect = painter.clip_rect();
         egui::emath::RectTransform::from_to(
             egui::Rect::from_center_size(egui::Pos2::ZERO, rect.square_proportions() / self.zoom),
@@ -184,43 +184,43 @@ impl App {
     fn draw_grid(&self, painter: &egui::Painter, shapes: &mut Vec<egui::Shape>) {
         let x_axis = self.draw_line(
             painter,
-            [egui::pos2(-1.0, 0.0), egui::pos2(1.0, 0.0)],
+            [vec2(-1.0, 0.0), vec2(1.0, 0.0)],
             1.0,
             egui::Color32::WHITE,
         );
         let y_axis = self.draw_line(
             painter,
-            [egui::pos2(0.0, -1.0), egui::pos2(0.0, 1.0)],
+            [vec2(0.0, -1.0), vec2(0.0, 1.0)],
             1.0,
             egui::Color32::WHITE,
         );
 
         // shapes.push(egui::Shape::circle_filled(
-        //     self.to_screen_space(painter, egui::pos2(0.0, 0.0)),
+        //     self.to_screen_space(painter, vec2(0.0, 0.0)),
         //     5.0,
         //     egui::Color32::RED,
         // ));
 
         // shapes.push(egui::Shape::circle_filled(
-        //     self.to_screen_space(painter, egui::pos2(1.0, 0.0)),
+        //     self.to_screen_space(painter, vec2(1.0, 0.0)),
         //     5.0,
         //     egui::Color32::ORANGE,
         // ));
 
         // shapes.push(egui::Shape::circle_filled(
-        //     self.to_screen_space(painter, egui::pos2(0.0, 1.0)),
+        //     self.to_screen_space(painter, vec2(0.0, 1.0)),
         //     5.0,
         //     egui::Color32::YELLOW,
         // ));
 
         // shapes.push(egui::Shape::circle_filled(
-        //     self.to_screen_space(painter, egui::pos2(-1.0, 0.0)),
+        //     self.to_screen_space(painter, vec2(-1.0, 0.0)),
         //     5.0,
         //     egui::Color32::GREEN,
         // ));
 
         // shapes.push(egui::Shape::circle_filled(
-        //     self.to_screen_space(painter, egui::pos2(0.0, -1.0)),
+        //     self.to_screen_space(painter, vec2(0.0, -1.0)),
         //     5.0,
         //     egui::Color32::BLUE,
         // ));
@@ -232,7 +232,7 @@ impl App {
     fn draw_line(
         &self,
         painter: &egui::Painter,
-        points: [egui::Pos2; 2],
+        points: [Vec2; 2],
         stroke: f32,
         color: egui::Color32,
     ) -> egui::Shape {
