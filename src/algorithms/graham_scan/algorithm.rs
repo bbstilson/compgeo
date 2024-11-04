@@ -1,5 +1,5 @@
 use super::helpers;
-use crate::data::{pos2, vec2, Cone, Pos2};
+use crate::data::{pos2, Cone, Pos2};
 
 // https://en.wikipedia.org/wiki/Graham_scan
 pub fn graham_scan(points: &[Pos2]) -> Vec<Pos2> {

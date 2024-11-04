@@ -2,8 +2,18 @@ use crate::data::{point::Point2, sphere::Sphere1};
 
 use super::{line_segment::LineSegment, simplex::Simplex, Point};
 
+#[derive(Debug)]
 pub struct Triangle {
     pub vertices: [Point; 3],
+}
+
+impl PartialEq for Triangle {
+    // TODO: should we consider any rotation of the triangle?
+    fn eq(&self, other: &Self) -> bool {
+        let [a1, b1, c1] = self.vertices;
+        let [a2, b2, c2] = other.vertices;
+        a1 == a2 && b1 == b2 && c1 == c2
+    }
 }
 
 impl Simplex for Triangle {
@@ -26,9 +36,8 @@ impl Simplex for Triangle {
             + (cx * cx + cy * cy) * (bx - ax))
             / d;
         let center = Point2 { x: ux, y: uy };
-        let x = ux - a.x;
-        let y = b.y - uy;
-        let radius = x.hypot(y);
+        // TODO: replace this with a faster method
+        let radius = ((ux - a.x).powf(2.0) + (uy - a.y).powf(2.0)).sqrt();
         Some(Sphere1 { radius, center })
     }
 

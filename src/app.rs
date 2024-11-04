@@ -60,6 +60,7 @@ pub struct AppState {
     points: Vec<Dot>,
     vertices: Vec<Pos2>,
     spheres: Vec<Sphere1>,
+    triangles: Vec<Triangle>,
     rendered: bool,
     algorithm: Algorithm,
 }
@@ -73,6 +74,7 @@ impl Default for AppState {
             points: vec![],
             vertices: vec![],
             spheres: vec![],
+            triangles: vec![],
             rendered: false,
             algorithm: Algorithm::GrahamScan,
         }
@@ -141,20 +143,19 @@ impl App {
             self.state.rendered = true;
         }
 
-        if !self.state.rendered && !self.state.points.is_empty() {
-            let av = self.state.points[0].pos;
-            let a = Point { x: av.x, y: av.y };
-            let bv = self.state.points[1].pos;
-            let b = Point { x: bv.x, y: bv.y };
-            let cv = self.state.points[2].pos;
-            let c = Point { x: cv.x, y: cv.y };
+        // if !self.state.rendered {
+        //     let a = Point { x: 0.0, y: 1.0 };
+        //     let b = Point { x: 1.0, y: 0.0 };
+        //     let c = Point { x: 0.0, y: 0.0 };
 
-            let t = Triangle {
-                vertices: [a, b, c],
-            };
-            self.state.vertices = vec![av, bv, cv];
-            self.state.spheres = vec![t.circumscribe().unwrap()];
-        }
+        //     let t = Triangle {
+        //         vertices: [a, b, c],
+        //     };
+        //     let c = t.circumscribe().unwrap();
+        //     self.state.triangles = vec![t];
+        //     self.state.spheres = vec![c];
+        //     self.state.rendered = true;
+        // }
 
         self.paint();
         // Make sure we allocate what we used (everything)
@@ -215,21 +216,33 @@ impl App {
     fn paint(&mut self) {
         let mut shapes: Vec<egui::Shape> = Vec::new();
 
-        for Dot { pos, color } in &self.state.points {
-            // todo: append
-            shapes.push(egui::Shape::circle_filled(
-                self.to_screen_space(*pos),
-                self.state.radius,
-                *color,
-            ));
-        }
+        shapes.append(
+            &mut self
+                .state
+                .points
+                .iter()
+                .map(|Dot { pos, color }| {
+                    egui::Shape::circle_filled(
+                        self.to_screen_space(*pos),
+                        self.state.radius,
+                        *color,
+                    )
+                })
+                .collect(),
+        );
 
-        for w in self.state.vertices.windows(2) {
-            let a = w[0];
-            let b = w[1];
-            // todo: append
-            shapes.push(self.draw_line([a, b], 1.0, egui::Color32::LIGHT_BLUE));
-        }
+        shapes.append(
+            &mut self
+                .state
+                .vertices
+                .windows(2)
+                .map(|w| {
+                    let a = w[0];
+                    let b = w[1];
+                    self.draw_line([a, b], 1.0, egui::Color32::LIGHT_BLUE)
+                })
+                .collect(),
+        );
 
         if !self.state.vertices.is_empty() {
             shapes.push(self.draw_line(
@@ -242,15 +255,37 @@ impl App {
             ));
         }
 
-        // let spheres = self.state.spheres.iter().map(|s| {
-        //     let Point2 { x, y } = s.center;
-        //     let center = Pos2 { x, y };
-        //     self.draw_sphere(s.radius, center, 1.0, egui::Color32::LIGHT_GREEN)
-        // });
+        shapes.append(
+            &mut self
+                .state
+                .triangles
+                .iter()
+                .flat_map(|t| self.draw_triangle(t, 1.0, egui::Color32::LIGHT_GRAY))
+                .collect(),
+        );
 
+        shapes.append(
+            &mut self
+                .state
+                .spheres
+                .iter()
+                .flat_map(|s| {
+                    let Point2 { x, y } = s.center;
+                    let center = Pos2 { x, y };
+                    [
+                        // render the center
+                        egui::Shape::circle_filled(
+                            self.to_screen_space(pos2(x, y)),
+                            2.0,
+                            egui::Color32::LIGHT_GREEN,
+                        ),
+                        self.draw_sphere(s.radius, center, 1.0, egui::Color32::LIGHT_GREEN),
+                    ]
+                })
+                .collect(),
+        );
         // shapes.append(&mut self.draw_debug_grid());
 
-        // self.add_shapes(spheres);
         self.add_shapes(shapes);
     }
 
@@ -275,7 +310,11 @@ impl App {
                 egui::Color32::RED,
             ),
             // unit circle
-            self.draw_sphere(1.0, pos2(0.0, 0.0), 1.0, egui::Color32::WHITE),
+            self.draw_sphere(1.0, pos2(0.0, 0.0), 1.0, egui::Color32::RED),
+            self.draw_sphere(1.0, pos2(1.0, 0.0), 1.0, egui::Color32::ORANGE),
+            self.draw_sphere(1.0, pos2(-1.0, 0.0), 1.0, egui::Color32::GREEN),
+            self.draw_sphere(1.0, pos2(0.0, 1.0), 1.0, egui::Color32::YELLOW),
+            self.draw_sphere(1.0, pos2(0.0, -1.0), 1.0, egui::Color32::BLUE),
             // axis points
             egui::Shape::circle_filled(
                 self.to_screen_space(pos2(1.0, 0.0)),
@@ -300,6 +339,22 @@ impl App {
         ]
     }
 
+    fn draw_triangle(&self, t: &Triangle, stroke: f32, color: egui::Color32) -> Vec<egui::Shape> {
+        let Triangle { vertices } = t;
+        let [a, b, c] = vertices;
+        let Point { x: ax, y: ay } = a;
+        let Point { x: bx, y: by } = b;
+        let Point { x: cx, y: cy } = c;
+        let a = pos2(*ax, *ay);
+        let b = pos2(*bx, *by);
+        let c = pos2(*cx, *cy);
+        vec![
+            self.draw_line([a, b], stroke, color),
+            self.draw_line([b, c], stroke, color),
+            self.draw_line([c, a], stroke, color),
+        ]
+    }
+
     fn draw_line(&self, points: [Pos2; 2], stroke: f32, color: egui::Color32) -> egui::Shape {
         let line = [
             self.to_screen_space(points[0]),
@@ -316,8 +371,8 @@ impl App {
         color: egui::Color32,
     ) -> egui::Shape {
         let transformed_center = self.to_screen_space(center);
-        let transformed_radius = self.to_screen_space(Pos2 { x: radius, y: 0.0 }).x;
-        let radius = transformed_radius - transformed_center.x;
+        let width = self.graph_painter.as_ref().unwrap().clip_rect().width();
+        let radius = width * radius * 0.5;
         egui::Shape::circle_stroke(transformed_center, radius, (stroke, color))
     }
 
