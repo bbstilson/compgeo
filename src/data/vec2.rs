@@ -37,6 +37,14 @@ impl Vec2 {
         self.x.hypot(self.y)
     }
 
+    #[inline(always)]
+    pub fn perpendicular(self) -> Self {
+        Self {
+            x: -self.y,
+            y: self.x,
+        }
+    }
+
     /// Safe normalize: returns zero if input is zero.
     #[must_use]
     #[inline(always)]

@@ -1,10 +1,8 @@
-use crate::{
-    data::{vec2, Cone, Vec2},
-    graham_scan::helpers,
-};
+use super::helpers;
+use crate::data::{vec2, Cone, Vec2};
 
 // https://en.wikipedia.org/wiki/Graham_scan
-pub fn graham_scan<'a>(points: &[Vec2]) -> Vec<Vec2> {
+pub fn graham_scan(points: &[Vec2]) -> Vec<Vec2> {
     if points.is_empty() {
         return vec![];
     }
