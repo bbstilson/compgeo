@@ -1,8 +1,8 @@
 use super::helpers;
-use crate::data::{vec2, Cone, Vec2};
+use crate::data::{pos2, vec2, Cone, Pos2};
 
 // https://en.wikipedia.org/wiki/Graham_scan
-pub fn graham_scan(points: &[Vec2]) -> Vec<Vec2> {
+pub fn graham_scan(points: &[Pos2]) -> Vec<Pos2> {
     if points.is_empty() {
         return vec![];
     }
@@ -51,20 +51,20 @@ pub fn graham_scan(points: &[Vec2]) -> Vec<Vec2> {
     stack
 }
 
-fn graham_sort(p0: Vec2, points: &mut [Vec2]) {
+fn graham_sort(p0: Pos2, points: &mut [Pos2]) {
     let p0 = p0;
     points.sort_by(|a, b| {
-        let x_axis = vec2(1.0 + p0.x, p0.y);
+        let x_axis = pos2(1.0 + p0.x, p0.y);
 
         let a1 = Cone {
-            a: *a,
-            b: x_axis,
-            origin: p0,
+            a: (*a).into(),
+            b: x_axis.into(),
+            origin: p0.into(),
         };
         let a2 = Cone {
-            a: *b,
-            b: x_axis,
-            origin: p0,
+            a: (*b).into(),
+            b: x_axis.into(),
+            origin: p0.into(),
         };
 
         if a1.angle() <= a2.angle() {
@@ -77,28 +77,28 @@ fn graham_sort(p0: Vec2, points: &mut [Vec2]) {
 
 #[test]
 fn test_graham_sort() {
-    let bottom_left = vec2(-1.0, -1.0);
-    let bottom_right = vec2(1.0, -1.0);
-    let top_middle = vec2(0.0, 1.0);
-    let center = vec2(0.0, 0.0);
+    let bottom_left = pos2(-1.0, -1.0);
+    let bottom_right = pos2(1.0, -1.0);
+    let top_middle = pos2(0.0, 1.0);
+    let center = pos2(0.0, 0.0);
     let mut points = vec![center.clone(), bottom_right.clone(), top_middle.clone()];
     graham_sort(bottom_left, &mut points);
     assert_eq!(points, vec![bottom_right, center, top_middle]);
 
-    let p0 = vec2(-0.41119027, -0.31959605);
-    let p1 = vec2(-0.033056736, -0.1505971);
-    let p2 = vec2(0.22698152, 0.4522189);
-    let p3 = vec2(-0.034094572, 0.35310435);
-    let p4 = vec2(-0.3797356, 0.35341442);
+    let p0 = pos2(-0.41119027, -0.31959605);
+    let p1 = pos2(-0.033056736, -0.1505971);
+    let p2 = pos2(0.22698152, 0.4522189);
+    let p3 = pos2(-0.034094572, 0.35310435);
+    let p4 = pos2(-0.3797356, 0.35341442);
     let mut points = vec![p4.clone(), p2.clone(), p1.clone(), p3.clone()];
     graham_sort(p0, &mut points);
     assert_eq!(points, vec![p1, p2, p3, p4]);
 
-    let p0 = vec2(0.2, -0.3);
-    let p1 = vec2(-0.45289695, -0.099212766);
-    let p2 = vec2(-0.18725193, -0.058339);
-    let p3 = vec2(-0.26800287, 0.27599692);
-    let p4 = vec2(0.03216493, 0.38522828);
+    let p0 = pos2(0.2, -0.3);
+    let p1 = pos2(-0.45289695, -0.099212766);
+    let p2 = pos2(-0.18725193, -0.058339);
+    let p3 = pos2(-0.26800287, 0.27599692);
+    let p4 = pos2(0.03216493, 0.38522828);
     let mut points = vec![p3.clone(), p1.clone(), p4.clone(), p2.clone()];
     graham_sort(p0, &mut points);
     assert_eq!(points, vec![p4, p3, p2, p1,]);
@@ -106,33 +106,33 @@ fn test_graham_sort() {
 
 #[test]
 fn test_graham_scan() {
-    let bottom_left = vec2(-1.0, -1.0);
-    let bottom_right = vec2(1.0, -1.0);
-    let top_middle = vec2(0.0, 1.0);
+    let bottom_left = pos2(-1.0, -1.0);
+    let bottom_right = pos2(1.0, -1.0);
+    let top_middle = pos2(0.0, 1.0);
     let points = vec![
         bottom_left.clone(),
         bottom_right.clone(),
         top_middle.clone(),
-        vec2(0.0, 0.0), // centr
+        pos2(0.0, 0.0), // centr
     ];
     assert_eq!(
         graham_scan(&points),
         vec![bottom_left, bottom_right, top_middle]
     );
 
-    let p0 = vec2(-0.41119027, -0.31959605);
-    let p1 = vec2(-0.033056736, -0.1505971);
-    let p2 = vec2(0.22698152, 0.4522189);
-    let p3 = vec2(-0.034094572, 0.35310435);
-    let p4 = vec2(-0.3797356, 0.35341442);
+    let p0 = pos2(-0.41119027, -0.31959605);
+    let p1 = pos2(-0.033056736, -0.1505971);
+    let p2 = pos2(0.22698152, 0.4522189);
+    let p3 = pos2(-0.034094572, 0.35310435);
+    let p4 = pos2(-0.3797356, 0.35341442);
     let points = vec![p3.clone(), p1.clone(), p0.clone(), p4.clone(), p2.clone()];
     assert_eq!(graham_scan(&points), vec![p0, p1, p2, p4]);
 
-    let p0 = vec2(0.2, -0.3);
-    let p1 = vec2(-0.45289695, -0.099212766);
-    let p2 = vec2(-0.18725193, -0.058339);
-    let p3 = vec2(-0.26800287, 0.27599692);
-    let p4 = vec2(0.03216493, 0.38522828);
+    let p0 = pos2(0.2, -0.3);
+    let p1 = pos2(-0.45289695, -0.099212766);
+    let p2 = pos2(-0.18725193, -0.058339);
+    let p3 = pos2(-0.26800287, 0.27599692);
+    let p4 = pos2(0.03216493, 0.38522828);
     let points = vec![p3.clone(), p1.clone(), p0.clone(), p4.clone(), p2.clone()];
     assert_eq!(graham_scan(&points), vec![p0, p4, p3, p1]);
 }

@@ -1,14 +1,13 @@
-use core::panic;
-
-use eframe::egui::{self, pos2, Pos2};
+use eframe::egui;
 
 use crate::{
     algorithms,
     data::{
         point::Point2,
+        pos2,
         simplex::{Point, Simplex, Triangle},
         sphere::{Sphere, Sphere1},
-        Dot, Vec2,
+        Dot, Pos2,
     },
 };
 
@@ -100,8 +99,8 @@ impl App {
         let midpoint = width * 0.5;
         let half_height = height * 0.5;
         let offset = (self.state.zoom - 1.0) * height * 0.5;
-        let tl_rect = pos2(midpoint - (half_height + offset), 0.0 - offset);
-        let br_rect = pos2(midpoint + (half_height + offset), height + offset);
+        let tl_rect = egui::pos2(midpoint - (half_height + offset), 0.0 - offset);
+        let br_rect = egui::pos2(midpoint + (half_height + offset), height + offset);
 
         self.graph_painter = Some(egui::Painter::new(
             ui.ctx().clone(),
@@ -112,49 +111,50 @@ impl App {
             },
         ));
 
-        // ctx.input(|input| {
-        //     if input.key_pressed(egui::Key::Space) {
-        //         self.points = vec![];
-        //         self.rendered = false;
-        //     }
-        // });
+        ctx.input(|input| {
+            if input.key_pressed(egui::Key::Space) {
+                self.state.points = vec![];
+                self.state.rendered = false;
+            }
+        });
 
-        // if self.points.len() < self.num_points {
-        //     let num_to_generate = self.num_points - self.points.len();
-        //     let mut rng = rand::thread_rng();
-        //     let mut points = vec![Dot::default(); num_to_generate];
-        //     for i in 0..num_to_generate {
-        //         points[i] = Dot::random(&mut rng);
-        //     }
-        //     self.points.append(&mut points);
-        //     self.rendered = false;
-        // }
+        if self.state.points.len() < self.state.num_points {
+            let num_to_generate = self.state.num_points - self.state.points.len();
+            let mut rng = rand::thread_rng();
+            let mut points = vec![Dot::default(); num_to_generate];
+            for i in 0..num_to_generate {
+                points[i] = Dot::random(&mut rng);
+            }
+            self.state.points.append(&mut points);
+            self.state.rendered = false;
+        }
 
-        // if self.points.len() > self.num_points {
-        //     self.points.truncate(self.num_points);
-        //     self.rendered = false;
-        // }
+        if self.state.points.len() > self.state.num_points {
+            self.state.points.truncate(self.state.num_points);
+            self.state.rendered = false;
+        }
 
-        // if !self.rendered {
-        //     self.vertices =
-        //         algorithms::graham_scan(&self.points.iter().map(|p| p.pos).collect::<Vec<_>>());
-        //     self.rendered = true;
-        // }
+        if !self.state.rendered {
+            self.state.vertices = algorithms::graham_scan(
+                &self.state.points.iter().map(|p| p.pos).collect::<Vec<_>>(),
+            );
+            self.state.rendered = true;
+        }
 
-        // if !self.rendered && !self.points.is_empty() {
-        //     let av = self.points[0].pos;
-        //     let a = Point { x: av.x, y: av.y };
-        //     let bv = self.points[1].pos;
-        //     let b = Point { x: bv.x, y: bv.y };
-        //     let cv = self.points[2].pos;
-        //     let c = Point { x: cv.x, y: cv.y };
+        if !self.state.rendered && !self.state.points.is_empty() {
+            let av = self.state.points[0].pos;
+            let a = Point { x: av.x, y: av.y };
+            let bv = self.state.points[1].pos;
+            let b = Point { x: bv.x, y: bv.y };
+            let cv = self.state.points[2].pos;
+            let c = Point { x: cv.x, y: cv.y };
 
-        //     let t = Triangle {
-        //         vertices: [a, b, c],
-        //     };
-        //     self.vertices = vec![av, bv, cv];
-        //     self.spheres = vec![t.circumscribe().unwrap()];
-        // }
+            let t = Triangle {
+                vertices: [a, b, c],
+            };
+            self.state.vertices = vec![av, bv, cv];
+            self.state.spheres = vec![t.circumscribe().unwrap()];
+        }
 
         self.paint();
         // Make sure we allocate what we used (everything)
@@ -215,32 +215,32 @@ impl App {
     fn paint(&mut self) {
         let mut shapes: Vec<egui::Shape> = Vec::new();
 
-        // for Dot { pos, color } in &self.state.points {
-        //     // todo: append
-        //     shapes.push(egui::Shape::circle_filled(
-        //         self.to_screen_space(*pos),
-        //         self.state.radius,
-        //         *color,
-        //     ));
-        // }
+        for Dot { pos, color } in &self.state.points {
+            // todo: append
+            shapes.push(egui::Shape::circle_filled(
+                self.to_screen_space(*pos),
+                self.state.radius,
+                *color,
+            ));
+        }
 
-        // for w in self.state.vertices.windows(2) {
-        //     let a = w[0];
-        //     let b = w[1];
-        //     // todo: append
-        //     shapes.push(self.draw_line([a, b], 1.0, egui::Color32::LIGHT_BLUE));
-        // }
+        for w in self.state.vertices.windows(2) {
+            let a = w[0];
+            let b = w[1];
+            // todo: append
+            shapes.push(self.draw_line([a, b], 1.0, egui::Color32::LIGHT_BLUE));
+        }
 
-        // if !self.state.vertices.is_empty() {
-        //     shapes.push(self.draw_line(
-        //         [
-        //             *self.state.vertices.first().unwrap(),
-        //             *self.state.vertices.last().unwrap(),
-        //         ],
-        //         1.0,
-        //         egui::Color32::LIGHT_BLUE,
-        //     ));
-        // }
+        if !self.state.vertices.is_empty() {
+            shapes.push(self.draw_line(
+                [
+                    *self.state.vertices.first().unwrap(),
+                    *self.state.vertices.last().unwrap(),
+                ],
+                1.0,
+                egui::Color32::LIGHT_BLUE,
+            ));
+        }
 
         // let spheres = self.state.spheres.iter().map(|s| {
         //     let Point2 { x, y } = s.center;
@@ -248,10 +248,9 @@ impl App {
         //     self.draw_sphere(s.radius, center, 1.0, egui::Color32::LIGHT_GREEN)
         // });
 
-        shapes.append(&mut self.draw_debug_grid());
+        // shapes.append(&mut self.draw_debug_grid());
 
         // self.add_shapes(spheres);
-        // self.add_shapes(vertices);
         self.add_shapes(shapes);
     }
 
@@ -316,16 +315,10 @@ impl App {
         stroke: f32,
         color: egui::Color32,
     ) -> egui::Shape {
-        // println!("~~ center ~~");
-        let new_center = self.to_screen_space(center);
-        // println!("old center -> new center | {center} -> {new_center}");
-        // println!("~~ radius ~~");
-        let new_radius = self.to_screen_space(Pos2 { x: radius, y: 0.0 }).x;
-
-        // println!("old radius -> new radius | {radius} -> {new_radius}");
-        let radius = new_radius - new_center.x;
-        // println!();
-        egui::Shape::circle_stroke(new_center, radius, (stroke, color))
+        let transformed_center = self.to_screen_space(center);
+        let transformed_radius = self.to_screen_space(Pos2 { x: radius, y: 0.0 }).x;
+        let radius = transformed_radius - transformed_center.x;
+        egui::Shape::circle_stroke(transformed_center, radius, (stroke, color))
     }
 
     /// Takes a point `p` and converts it to screen space.
@@ -340,14 +333,8 @@ impl App {
         // the origin (0,0), so we scale the size up by two (2,2), then get the middle.
         let to_rect = self.graph_painter.as_ref().unwrap().clip_rect();
         let size = egui::Vec2 { x: 2.0, y: 2.0 };
-        // println!("size: {size}");
         let from_rect = egui::Rect::from_center_size(egui::Pos2::ZERO, size);
-        // println!("from_rect: {from_rect}");
         let transform = egui::emath::RectTransform::from_to(from_rect, to_rect);
-        // println!("transform: {transform:?}");
-        let transformed = transform.transform_pos(egui::pos2(p.x, p.y * -1.0));
-        // println!("{p} -> {transformed}");
-        // panic!("wah");
-        transformed
+        transform.transform_pos(egui::pos2(p.x, p.y * -1.0))
     }
 }

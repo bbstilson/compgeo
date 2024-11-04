@@ -1,12 +1,12 @@
-use crate::data::{Cone, PolarDirection, Vec2};
+use crate::data::{Cone, PolarDirection, Pos2};
 
-pub fn to_the_right(stack: &[Vec2], p2: Vec2) -> bool {
+pub fn to_the_right(stack: &[Pos2], p2: Pos2) -> bool {
     let p0 = next_to_top(&stack);
     let p1 = top(&stack);
     let cone = Cone {
-        a: p0,
-        b: p2,
-        origin: p1,
+        a: p0.into(),
+        b: p2.into(),
+        origin: p1.into(),
     };
     match cone.angle_direction() {
         PolarDirection::Collinear | PolarDirection::CW => true,
